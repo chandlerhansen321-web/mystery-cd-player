@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystery CD Player 📀</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            transition: transform 0.6s ease-out;
+            position: relative;
+        }
+
+        .container.shift-down {
+            transform: translateY(200px);
+        }
+
+        .cd-player {
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 50%, #2a2a2a 100%);
+            border-radius: 15px;
+            padding: 40px 30px;
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.1),
+                inset 0 -1px 0 rgba(0,0,0,0.5);
+            position: relative;
+            animation: fadeInUp 0.8s ease-out;
+            overflow: visible;
+            border: 2px solid #333;
+        }
+
+        .cd-player::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #444, transparent);
+            border-radius: 2px;
+        }
+
+        .cd-player::after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #444, transparent);
+            border-radius: 2px;
+        }
+
+        /* CD Container - appears above player */
+        .cd-container {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            margin-left: -125px;
+            width: 250px;
+            height: 250px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.5);
+        }
+
+        .container {
+            position: relative;
+        }
+
+        .cd-container.show {
+            animation: cdAppear 0.8s ease-out forwards;
+        }
+
+        .cd-container.spinning .cd-disc {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes cdAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes cdFadeOut {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+
+        .cd-container.fade-out {
+            animation: cdFadeOut 0.8s ease-out forwards;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* CD Disc */
+        .cd-disc {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffffff, #f5f5f5, #e8e8e8);
+            box-shadow:
+                0 20px 50px rgba(0,0,0,0.6),
+                inset 0 5px 15px rgba(255,255,255,0.9),
+                inset 0 -5px 15px rgba(0,0,0,0.2);
+            border: 5px solid #e0e0e0;
+        }
+
+        /* Center hole */
+        .cd-disc::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #666 30%, #333 31%, #333 50%, #999 51%);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+
+        /* Subtle CD rings */
+        .cd-disc::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.05);
+            pointer-events: none;
+        }
+
+        /* Curved text container */
+        .cd-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .cd-label svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .cd-label text {
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            fill: #222;
+            letter-spacing: 3px;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .cd-slot {
+            background: #000;
+            height: 40px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cd-slot.inserting::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,0,0.3), transparent);
+            animation: insertFlash 0.8s ease-out;
+        }
+
+        @keyframes insertFlash {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+
+        .cd-slot-text {
+            color: #00ff00;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+
+        .display {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 150px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .display-text {
+            color: #00ff00;
+            font-size: 24px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .track-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #00ff00;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .player-container {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+            display: none;
+        }
+
+        .player-container.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        #player {
+            width: 100%;
+            height: 300px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, #f0f0f0, #cacaca);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow:
+                5px 5px 10px #bebebe,
+                -5px -5px 10px #ffffff;
+            transition: all 0.1s;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover:not(:disabled) {
+            box-shadow:
+                3px 3px 8px #bebebe,
+                -3px -3px 8px #ffffff;
+            transform: scale(1.05);
+        }
+
+        .btn:active:not(:disabled) {
+            box-shadow:
+                inset 3px 3px 8px #bebebe,
+                inset -3px -3px 8px #ffffff;
+            transform: scale(0.95);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: linear-gradient(145deg, #444, #333);
+            color: #00ff00;
+            border: 2px solid #555;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.1),
+                0 5px 15px rgba(0,0,0,0.5);
+            transition: all 0.2s;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .mode-btn:hover {
+            background: linear-gradient(145deg, #555, #444);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.2),
+                0 7px 20px rgba(0,0,0,0.6);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(145deg, #667eea, #5568d3);
+            color: #fff;
+            border-color: #667eea;
+            box-shadow:
+                inset 0 0 20px rgba(102,126,234,0.5),
+                0 7px 20px rgba(102,126,234,0.4);
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+
+        .create-section {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .create-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+
+        .input-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .track-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            background: white;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .track-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .track-item:hover {
+            background: #e8e8e8;
+            transform: translateX(5px);
+        }
+
+        .track-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+
+        .track-info-inline {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .track-text {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .track-text > div {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .remove-track, .add-track {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .add-track {
+            background: #1DB954;
+        }
+
+        .add-track:hover {
+            background: #1ed760;
+            transform: scale(1.1);
+        }
+
+        .remove-track:hover {
+            background: #ff6666;
+            transform: scale(1.1);
+        }
+
+        .share-code {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 28px;
+            letter-spacing: 4px;
+            border: 2px dashed #764ba2;
+            animation: fadeIn 0.5s ease-out;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #00ff00;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.7;
+        }
+
+        /* Sparkle effect */
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle 1s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <!-- CD Display - appears above player -->
+    <div class="cd-container" id="cdContainer">
+        <div class="cd-disc" id="cdDisc">
+            <div class="cd-label" id="cdLabel">
+                <svg viewBox="0 0 250 250">
+                    <path id="curve" d="M 50,125 A 75,75 0 0,1 200,125" fill="transparent"/>
+                    <text>
+                        <textPath href="#curve" startOffset="50%" text-anchor="middle" id="cdText">
+                        </textPath>
+                    </text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <div class="cd-player">
+
+            <!-- Mode Selection -->
+            <div class="mode-selector">
+                <button class="mode-btn active" onclick="switchMode('play')">▶️ PLAY CD</button>
+                <button class="mode-btn" onclick="switchMode('create')">💿 CREATE CD</button>
+            </div>
+
+            <!-- Play Mode -->
+            <div id="playMode" class="play-section">
+                <div class="cd-slot" id="cdSlot">
+                    <span class="cd-slot-text">▶ INSERT CD CODE ◀</span>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="cdCodeInput" placeholder="ENTER CD CODE..." style="text-align: center; text-transform: uppercase;">
+                    <button class="mode-btn" style="margin-top: 10px;" onclick="loadCD()">LOAD CD</button>
+                </div>
+
+                <div class="display">
+                    <div class="display-text" id="displayText">
+                        NO CD LOADED<br>
+                        <span style="font-size: 18px; opacity: 0.7;">INSERT A CD CODE TO BEGIN</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar"></div>
+                    </div>
+                </div>
+
+                <div class="player-container" id="playerContainer">
+                    <div id="player"></div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" onclick="previousTrack()" id="prevBtn" disabled>⏮️</button>
+                    <button class="btn" onclick="togglePlay()" id="playBtn" disabled>▶️</button>
+                    <button class="btn" onclick="nextTrack()" id="nextBtn" disabled>⏭️</button>
+                </div>
+            </div>
+
+            <!-- Create Mode -->
+            <div id="createMode" class="create-section">
+                <div class="input-group">
+                    <label>CD TITLE:</label>
+                    <input type="text" id="cdTitle" placeholder="SUMMER VIBES MIX">
+                </div>
+
+                <div class="input-group">
+                    <label>CD MESSAGE (OPTIONAL):</label>
+                    <textarea id="cdMessage" placeholder="Add a personal message for the recipient..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>SEARCH SONGS:</label>
+                    <input type="text" id="trackSearch" placeholder="SEARCH YOUTUBE MUSIC..." onkeypress="if(event.key==='Enter') searchTracks()">
+                    <button class="mode-btn" style="margin-top: 10px;" onclick="searchTracks()">SEARCH</button>
+                </div>
+
+                <div class="track-list" id="searchResults"></div>
+
+                <label>YOUR CD TRACKS (MAX 20):</label>
+                <div class="track-list" id="selectedTracks">
+                    <p style="text-align: center; opacity: 0.5;">NO TRACKS ADDED YET</p>
+                </div>
+
+                <button class="mode-btn" onclick="createCD()">💿 CREATE CD</button>
+
+                <div id="shareSection" style="display: none;">
+                    <div class="share-code" id="shareCode"></div>
+                    <p style="text-align: center; margin-top: 10px; font-size: 18px;">📋 COPY & SHARE THIS CODE!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="app.js"></script>
+</body>
+</html>
