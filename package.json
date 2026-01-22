@@ -2,6 +2,7 @@
   "name": "mystery-cd-player",
   "version": "1.0.0",
   "description": "A retro 90s-style web app for creating and sharing mystery music playlists",
+  "type": "module",
   "keywords": [
     "music",
     "playlist",
