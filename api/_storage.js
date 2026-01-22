@@ -1,17 +1,22 @@
 // Storage using Vercel Blob
-import { put, list, head } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 
 export async function getCD(code) {
     try {
         const upperCode = code.toUpperCase();
-        const url = `https://public.blob.vercel-storage.com/cds/${upperCode}.json`;
 
-        // Try to fetch the CD data
-        const response = await fetch(url);
-        if (response.ok) {
-            const cd = await response.json();
-            return cd;
+        // List all blobs and find the matching one
+        const { blobs } = await list({ prefix: `cds/${upperCode}.json` });
+
+        if (blobs.length > 0) {
+            // Fetch the blob content
+            const response = await fetch(blobs[0].url);
+            if (response.ok) {
+                const cd = await response.json();
+                return cd;
+            }
         }
+
         return null;
     } catch (error) {
         console.error('Error getting CD from Blob:', error);
@@ -24,7 +29,8 @@ export async function saveCD(code, cdData) {
         const upperCode = code.toUpperCase();
         const blob = await put(`cds/${upperCode}.json`, JSON.stringify(cdData), {
             access: 'public',
-            contentType: 'application/json'
+            contentType: 'application/json',
+            addRandomSuffix: false
         });
 
         console.log(`CD saved to Blob: ${upperCode}`, blob.url);
