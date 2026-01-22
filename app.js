@@ -292,8 +292,15 @@ async function loadCD() {
                 console.log('Loaded video:', currentCD.tracks[0].videoId);
             } catch (e) {
                 console.error('Error cueing video:', e);
+                // Try reinitializing player if it failed
+                setTimeout(tryLoadVideo, 1000);
             }
         } else if (currentCD.tracks.length > 0) {
+            // If player not ready, try to initialize it
+            if (!youtubePlayer && window.YT && window.YT.Player) {
+                console.log('Initializing player...');
+                initializePlayer();
+            }
             setTimeout(tryLoadVideo, 500);
         }
     };
@@ -303,7 +310,18 @@ async function loadCD() {
 // Playback Controls
 function togglePlay() {
     if (!youtubePlayer || !playerReady) {
-        alert('PLAYER NOT READY!\n\nPlease wait a moment and try again.');
+        // Try to initialize player if it doesn't exist
+        if (window.YT && window.YT.Player && !youtubePlayer) {
+            console.log('Player not initialized, initializing now...');
+            initializePlayer();
+            setTimeout(() => {
+                if (currentCD && currentCD.tracks.length > 0) {
+                    youtubePlayer.loadVideoById(currentCD.tracks[currentTrackIndex].videoId);
+                }
+            }, 1000);
+        } else {
+            alert('PLAYER NOT READY!\n\nPlease refresh the page and try again.');
+        }
         return;
     }
 
@@ -615,5 +633,3 @@ function generateCode() {
     }
     return code;
 }
-
-
