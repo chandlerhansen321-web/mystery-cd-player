@@ -211,21 +211,31 @@ async function loadCD() {
     document.getElementById('displayText').innerHTML = '<div class="loading">🔍 LOADING CD...</div>';
 
     let cd;
-    try {
-        // Fetch CD from backend
-        const response = await fetch(`${API_URL}/cd/${code}`);
-        const data = await response.json();
 
-        if (!data.success || !data.cd) {
-            alert('CD NOT FOUND! CHECK YOUR CODE.');
-            document.getElementById('displayText').innerHTML = 'NO CD LOADED<br><span style="font-size: 18px; opacity: 0.7;">INSERT A CD CODE TO BEGIN</span>';
-            return;
+    // Try localStorage first (faster and works across browser)
+    const storedCDs = JSON.parse(localStorage.getItem('mysteryCDs') || '{}');
+    cd = storedCDs[code];
+
+    // If not in localStorage, try backend
+    if (!cd) {
+        try {
+            const response = await fetch(`${API_URL}/cd/${code}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.cd) {
+                    cd = data.cd;
+                    // Save to localStorage for future use
+                    storedCDs[code] = cd;
+                    localStorage.setItem('mysteryCDs', JSON.stringify(storedCDs));
+                }
+            }
+        } catch (error) {
+            console.log('Backend fetch failed:', error);
         }
+    }
 
-        cd = data.cd;
-    } catch (error) {
-        console.error('Error loading CD:', error);
-        alert('ERROR LOADING CD! CHECK YOUR CONNECTION.');
+    if (!cd) {
+        alert('CD NOT FOUND! CHECK YOUR CODE.');
         document.getElementById('displayText').innerHTML = 'NO CD LOADED<br><span style="font-size: 18px; opacity: 0.7;">INSERT A CD CODE TO BEGIN</span>';
         return;
     }
@@ -515,9 +525,21 @@ async function createCD() {
 
     const code = generateCode();
 
+    // Save to localStorage (works locally and as backup)
+    const cdData = {
+        title: title,
+        message: message,
+        tracks: selectedTracks,
+        createdAt: new Date().toISOString()
+    };
+
+    const storedCDs = JSON.parse(localStorage.getItem('mysteryCDs') || '{}');
+    storedCDs[code] = cdData;
+    localStorage.setItem('mysteryCDs', JSON.stringify(storedCDs));
+
+    // Try to save to backend (but don't fail if it doesn't work)
     try {
-        // Save CD to backend
-        const response = await fetch(`${API_URL}/cd`, {
+        await fetch(`${API_URL}/cd`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -529,20 +551,9 @@ async function createCD() {
                 tracks: selectedTracks
             })
         });
-
-        const data = await response.json();
-
-        if (!data.success) {
-            // If code exists, try again with a new code
-            if (response.status === 409) {
-                return createCD();
-            }
-            throw new Error(data.message || 'Failed to create CD');
-        }
+        console.log('CD saved to backend');
     } catch (error) {
-        console.error('Error creating CD:', error);
-        alert('ERROR CREATING CD! CHECK YOUR CONNECTION.');
-        return;
+        console.log('Backend save failed, using localStorage only:', error);
     }
 
     // Show CD above player
@@ -604,3 +615,5 @@ function generateCode() {
     }
     return code;
 }
+
+
