@@ -1,21 +1,56 @@
-// Simple in-memory storage that persists across function calls in the same instance
-// NOTE: This will reset on Vercel redeploys. For production, use Vercel KV, MongoDB, or similar.
+// Storage using Vercel Blob
+import { put, list, head } from '@vercel/blob';
 
-// Global storage object
-global.cdsDatabase = global.cdsDatabase || {};
+export async function getCD(code) {
+    try {
+        const upperCode = code.toUpperCase();
+        const url = `https://public.blob.vercel-storage.com/cds/${upperCode}.json`;
 
-export function getCD(code) {
-    return global.cdsDatabase[code.toUpperCase()];
+        // Try to fetch the CD data
+        const response = await fetch(url);
+        if (response.ok) {
+            const cd = await response.json();
+            return cd;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting CD from Blob:', error);
+        return null;
+    }
 }
 
-export function saveCD(code, cdData) {
-    global.cdsDatabase[code.toUpperCase()] = cdData;
+export async function saveCD(code, cdData) {
+    try {
+        const upperCode = code.toUpperCase();
+        const blob = await put(`cds/${upperCode}.json`, JSON.stringify(cdData), {
+            access: 'public',
+            contentType: 'application/json'
+        });
+
+        console.log(`CD saved to Blob: ${upperCode}`, blob.url);
+        return true;
+    } catch (error) {
+        console.error('Error saving CD to Blob:', error);
+        return false;
+    }
 }
 
-export function getAllCodes() {
-    return Object.keys(global.cdsDatabase);
+export async function getAllCodes() {
+    try {
+        const { blobs } = await list({ prefix: 'cds/' });
+        return blobs.map(blob => blob.pathname.replace('cds/', '').replace('.json', ''));
+    } catch (error) {
+        console.error('Error getting all codes:', error);
+        return [];
+    }
 }
 
-export function getCDCount() {
-    return Object.keys(global.cdsDatabase).length;
+export async function getCDCount() {
+    try {
+        const codes = await getAllCodes();
+        return codes.length;
+    } catch (error) {
+        console.error('Error getting CD count:', error);
+        return 0;
+    }
 }
