@@ -1,7 +1,7 @@
-// Get a CD by code - Vercel Serverless Function
+// Get a CD by code - Vercel Serverless Function with KV
 import { getCD } from '../_storage.js';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,7 +18,7 @@ export default function handler(req, res) {
     }
 
     const { code } = req.query;
-    const cd = getCD(code);
+    const cd = await getCD(code);
 
     if (cd) {
         res.status(200).json({ success: true, cd: cd });
