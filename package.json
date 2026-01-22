@@ -10,5 +10,8 @@
     "90s"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@vercel/blob": "^0.23.0"
+  }
 }
