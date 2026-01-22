@@ -1,7 +1,7 @@
-// Create a new CD - Vercel Serverless Function
+// Create a new CD - Vercel Serverless Function with KV
 import { getCD, saveCD } from '../_storage.js';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,7 +24,8 @@ export default function handler(req, res) {
     }
 
     // Check if code already exists
-    if (getCD(code)) {
+    const existingCD = await getCD(code);
+    if (existingCD) {
         return res.status(409).json({ success: false, message: 'Code already exists' });
     }
 
@@ -36,9 +37,12 @@ export default function handler(req, res) {
         createdAt: new Date().toISOString()
     };
 
-    saveCD(code, cdData);
+    const saved = await saveCD(code, cdData);
 
-    console.log(`CD created: ${code.toUpperCase()} - "${title}"`);
-
-    res.status(200).json({ success: true, code: code.toUpperCase() });
+    if (saved) {
+        console.log(`CD created: ${code.toUpperCase()} - "${title}"`);
+        res.status(200).json({ success: true, code: code.toUpperCase() });
+    } else {
+        res.status(500).json({ success: false, message: 'Failed to save CD' });
+    }
 }
