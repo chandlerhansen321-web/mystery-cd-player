@@ -17,10 +17,29 @@ export default async function handler(req, res) {
         return res.status(405).json({ success: false, message: 'Method not allowed' });
     }
 
-    const { code, title, message, tracks } = req.body;
+    const { code, title, message, tracks } = req.body || {};
 
     if (!code || !title || !tracks) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // Abuse caps — public create endpoint backed by Vercel Blob, so bound every
+    // cost lever and validate `code` (it becomes the blob key cds/<code>.json, so
+    // the charset check also blocks path traversal / key escape).
+    if (typeof code !== 'string' || !/^[a-zA-Z0-9]{1,12}$/.test(code)) {
+        return res.status(400).json({ success: false, message: 'Invalid code' });
+    }
+    if (typeof title !== 'string' || title.length > 200) {
+        return res.status(400).json({ success: false, message: 'Invalid title' });
+    }
+    if (message != null && (typeof message !== 'string' || message.length > 2000)) {
+        return res.status(400).json({ success: false, message: 'Invalid message' });
+    }
+    if (!Array.isArray(tracks) || tracks.length === 0 || tracks.length > 20) {
+        return res.status(400).json({ success: false, message: 'Invalid tracks' });
+    }
+    if (JSON.stringify(req.body).length > 50000) {
+        return res.status(413).json({ success: false, message: 'Payload too large' });
     }
 
     // Check if code already exists
