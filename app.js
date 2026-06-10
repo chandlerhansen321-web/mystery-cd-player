@@ -8,6 +8,35 @@ let selectedTracks = [];
 let youtubePlayer = null;
 let playerReady = false;
 let searchCache = [];
+let lastCreatedCode = null;
+
+// Retro toast notifications (in-UI replacement for alert())
+function showToast(message, type, duration) {
+    let stack = document.getElementById('toastStack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'toastStack';
+        document.body.appendChild(stack);
+    }
+    const toast = document.createElement('div');
+    toast.className = 'toast' + (type === 'error' ? ' error' : '');
+    toast.textContent = message;
+    stack.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('fade');
+        setTimeout(() => toast.remove(), 400);
+    }, duration || 3000);
+}
+
+// Auto-load a CD from a shared link (?cd=CODE)
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    const code = (params.get('cd') || '').toUpperCase().trim();
+    if (code) {
+        document.getElementById('cdCodeInput').value = code;
+        loadCD();
+    }
+});
 
 // YouTube API Configuration - Built-in for easy deployment
 const YOUTUBE_API_KEY = 'AIzaSyBjPBELhlvVchiaO26hyeGt_I_5RcQd8pA';
@@ -90,7 +119,7 @@ function onPlayerError(event) {
         }, 2000);
     }
 
-    alert(errorMsg);
+    showToast(errorMsg, 'error');
 }
 
 function onPlayerStateChange(event) {
@@ -203,7 +232,7 @@ function createSparkles(element) {
 async function loadCD() {
     const code = document.getElementById('cdCodeInput').value.toUpperCase().trim();
     if (!code) {
-        alert('PLEASE ENTER A CD CODE!');
+        showToast('PLEASE ENTER A CD CODE!', 'error');
         return;
     }
 
@@ -235,7 +264,7 @@ async function loadCD() {
     }
 
     if (!cd) {
-        alert('CD NOT FOUND! CHECK YOUR CODE.');
+        showToast('CD NOT FOUND! CHECK YOUR CODE.', 'error');
         document.getElementById('displayText').innerHTML = 'NO CD LOADED<br><span style="font-size: 18px; opacity: 0.7;">INSERT A CD CODE TO BEGIN</span>';
         return;
     }
@@ -320,7 +349,7 @@ function togglePlay() {
                 }
             }, 1000);
         } else {
-            alert('PLAYER NOT READY!\n\nPlease refresh the page and try again.');
+            showToast('PLAYER NOT READY!\nPlease refresh the page and try again.', 'error');
         }
         return;
     }
@@ -346,7 +375,7 @@ function nextTrack() {
         }
         stopProgressTracking();
         document.getElementById('progressBar').style.width = '0%';
-        alert('END OF CD! 📀');
+        showToast('END OF CD! 📀');
     }
 }
 
@@ -417,7 +446,7 @@ function escapeHtml(text) {
 async function searchTracks() {
     const query = document.getElementById('trackSearch').value;
     if (!query) {
-        alert('ENTER A SEARCH QUERY!');
+        showToast('ENTER A SEARCH QUERY!', 'error');
         return;
     }
 
@@ -488,12 +517,12 @@ function displaySearchResults(tracks) {
 
 function addTrack(track) {
     if (selectedTracks.length >= 20) {
-        alert('MAX 20 TRACKS PER CD!');
+        showToast('MAX 20 TRACKS PER CD!', 'error');
         return;
     }
 
     if (selectedTracks.find(t => t.videoId === track.videoId)) {
-        alert('TRACK ALREADY ADDED!');
+        showToast('TRACK ALREADY ADDED!', 'error');
         return;
     }
 
@@ -537,7 +566,7 @@ async function createCD() {
     const message = document.getElementById('cdMessage').value;
 
     if (selectedTracks.length === 0) {
-        alert('ADD SOME TRACKS FIRST!');
+        showToast('ADD SOME TRACKS FIRST!', 'error');
         return;
     }
 
@@ -555,9 +584,11 @@ async function createCD() {
     storedCDs[code] = cdData;
     localStorage.setItem('mysteryCDs', JSON.stringify(storedCDs));
 
-    // Try to save to backend (but don't fail if it doesn't work)
+    // Try to save to backend — if this fails, the code only works on THIS device,
+    // so surface that to the creator instead of failing silently.
+    let savedToBackend = false;
     try {
-        await fetch(`${API_URL}/cd`, {
+        const saveResponse = await fetch(`${API_URL}/cd`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -569,9 +600,10 @@ async function createCD() {
                 tracks: selectedTracks
             })
         });
-        console.log('CD saved to backend');
+        savedToBackend = saveResponse.ok;
+        if (!savedToBackend) console.warn('Backend save failed with status', saveResponse.status);
     } catch (error) {
-        console.log('Backend save failed, using localStorage only:', error);
+        console.warn('Backend save failed, using localStorage only:', error);
     }
 
     // Show CD above player
@@ -595,10 +627,18 @@ async function createCD() {
         createSparkles(cdContainer);
     }, 1400);
 
-    // Show share code
+    // Show share code + link actions
+    lastCreatedCode = code;
     setTimeout(() => {
         document.getElementById('shareCode').textContent = code;
+        const status = document.getElementById('shareStatus');
+        if (savedToBackend) {
+            status.textContent = '✅ SAVED! ANYONE WITH THE LINK CAN PLAY IT.';
+        } else {
+            status.textContent = '⚠️ COULD NOT REACH SERVER — THIS CD ONLY WORKS ON THIS DEVICE. TRY CREATING IT AGAIN TO SHARE.';
+        }
         document.getElementById('shareSection').style.display = 'block';
+        showToast('CD CREATED! 💿');
     }, 1800);
 
     // Fade out CD and reset UI
@@ -621,8 +661,31 @@ async function createCD() {
         searchCache = [];
         updateSelectedTracks();
     }, 2500);
+}
 
-    alert('CD CREATED! 💿\n\nYour code is: ' + code + '\n\nShare it with friends!');
+// Share helpers
+function shareLinkFor(code) {
+    return `${window.location.origin}${window.location.pathname}?cd=${code}`;
+}
+
+async function copyToClipboard(text, successMsg) {
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast(successMsg);
+    } catch (e) {
+        // Clipboard API can fail on http / older browsers — fall back to prompt
+        window.prompt('COPY THIS:', text);
+    }
+}
+
+function copyShareLink() {
+    if (!lastCreatedCode) return;
+    copyToClipboard(shareLinkFor(lastCreatedCode), '🔗 LINK COPIED! SEND IT TO A FRIEND.');
+}
+
+function copyShareCode() {
+    if (!lastCreatedCode) return;
+    copyToClipboard(lastCreatedCode, '📋 CODE COPIED!');
 }
 
 function generateCode() {

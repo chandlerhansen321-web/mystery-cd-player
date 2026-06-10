@@ -560,6 +560,65 @@
             pointer-events: none;
             animation: sparkle 1s ease-out forwards;
         }
+
+        /* Retro toast notifications (replaces alert()) */
+        #toastStack {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .toast {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            letter-spacing: 1px;
+            background: #1a1a2e;
+            color: #00ff00;
+            border: 3px solid #00ff00;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+            padding: 12px 22px;
+            max-width: 90vw;
+            text-align: center;
+            white-space: pre-line;
+            animation: toastIn 0.25s ease-out;
+        }
+
+        .toast.error {
+            color: #ff5555;
+            border-color: #ff5555;
+        }
+
+        .toast.fade {
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .share-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .share-status {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 16px;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -594,7 +653,7 @@
                 </div>
 
                 <div class="input-group">
-                    <input type="text" id="cdCodeInput" placeholder="ENTER CD CODE..." style="text-align: center; text-transform: uppercase;">
+                    <input type="text" id="cdCodeInput" placeholder="ENTER CD CODE..." style="text-align: center; text-transform: uppercase;" onkeypress="if(event.key==='Enter') loadCD()">
                     <button class="mode-btn" style="margin-top: 10px;" onclick="loadCD()">LOAD CD</button>
                 </div>
 
@@ -648,7 +707,11 @@
 
                 <div id="shareSection" style="display: none;">
                     <div class="share-code" id="shareCode"></div>
-                    <p style="text-align: center; margin-top: 10px; font-size: 18px;">📋 COPY & SHARE THIS CODE!</p>
+                    <div class="share-actions">
+                        <button class="mode-btn" onclick="copyShareLink()">🔗 COPY LINK</button>
+                        <button class="mode-btn" onclick="copyShareCode()">📋 COPY CODE</button>
+                    </div>
+                    <p class="share-status" id="shareStatus"></p>
                 </div>
             </div>
         </div>
