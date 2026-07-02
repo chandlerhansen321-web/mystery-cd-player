@@ -228,11 +228,27 @@ function createSparkles(element) {
     }
 }
 
+// A loaded CD comes from the network / localStorage — check its shape before
+// using it so malformed data can't crash the player or poison the cache.
+function isValidCD(cd) {
+    return !!cd && typeof cd === 'object'
+        && typeof cd.title === 'string'
+        && Array.isArray(cd.tracks) && cd.tracks.length > 0
+        && cd.tracks.every(t => t && typeof t === 'object' && typeof t.videoId === 'string');
+}
+
 // Load CD with animation - appears above player
 async function loadCD() {
     const code = document.getElementById('cdCodeInput').value.toUpperCase().trim();
     if (!code) {
         showToast('PLEASE ENTER A CD CODE!', 'error');
+        return;
+    }
+
+    // The code also arrives via the shareable ?cd= link and is used to build the
+    // API request path — only accept the format generateCode() produces.
+    if (!/^[A-Z0-9]{1,12}$/.test(code)) {
+        showToast('INVALID CD CODE!', 'error');
         return;
     }
 
@@ -244,14 +260,15 @@ async function loadCD() {
     // Try localStorage first (faster and works across browser)
     const storedCDs = JSON.parse(localStorage.getItem('mysteryCDs') || '{}');
     cd = storedCDs[code];
+    if (cd && !isValidCD(cd)) cd = null;
 
     // If not in localStorage, try backend
     if (!cd) {
         try {
-            const response = await fetch(`${API_URL}/cd/${code}`);
+            const response = await fetch(`${API_URL}/cd/${encodeURIComponent(code)}`);
             if (response.ok) {
                 const data = await response.json();
-                if (data.success && data.cd) {
+                if (data.success && isValidCD(data.cd)) {
                     cd = data.cd;
                     // Save to localStorage for future use
                     storedCDs[code] = cd;
