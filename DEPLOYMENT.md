@@ -23,10 +23,10 @@ This guide will help you deploy your Mystery CD Player with a backend so your fr
 **Option A: Using GitHub Web Interface (Easiest)**
 
 1. On your new repo page, click **uploading an existing file**
-2. Drag and drop ALL files from your `mystery-cd-app` folder:
+2. Drag and drop ALL files from your `mystery-cd-player` folder:
    - `index.html`
    - `app.js`
-   - `server.js`
+   - `api/` (the whole folder)
    - `package.json`
    - `vercel.json`
    - `README.md`
@@ -81,19 +81,12 @@ Your app is now live! Share the URL with your friends:
 
 ### About the Backend
 
-The current setup uses **in-memory storage**, which means:
-- ✅ Perfect for testing and sharing with friends
-- ✅ Free and instant deployment
-- ⚠️ CDs will be lost if the server restarts (happens occasionally on free tier)
-- ⚠️ Not suitable for long-term storage
-
-**For Production (Optional):**
-If you want permanent storage, you'll need to add a database. Options:
-- Vercel KV (Redis)
-- MongoDB Atlas (free tier)
-- Supabase (free tier)
-
-Let me know if you want help setting up permanent storage!
+The backend is a pair of Vercel serverless functions (`api/cd/`) that store CDs
+in **Vercel Blob**:
+- ✅ Free tier is plenty for personal use
+- ✅ CDs persist across deploys and restarts
+- ⚠️ Requires a Blob store connected to the Vercel project (Storage → Create → Blob),
+  which provides the `BLOB_READ_WRITE_TOKEN` env var the functions need
 
 ## 🐛 Troubleshooting
 
@@ -102,7 +95,7 @@ Let me know if you want help setting up permanent storage!
 
 ### API not working
 - Check that `vercel.json` is properly configured
-- Make sure `server.js` is in the root directory
+- Make sure the `api/` folder is in the root directory
 
 ### CDs not saving
 - Check browser console for errors (F12)

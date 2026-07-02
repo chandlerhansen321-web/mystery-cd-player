@@ -77,13 +77,13 @@ Mystery CD Player lets you create music playlists (like making a mixtape) where 
 ### With Backend (Recommended)
 
 ```bash
-cd mystery-cd-app
+cd mystery-cd-player
 
 # Install dependencies
 npm install
 
-# Start the server
-npm start
+# Run the Vercel dev server (serves the site + api/ functions)
+npx vercel dev
 ```
 
 Then open: `http://localhost:3000`
@@ -101,8 +101,8 @@ Then open: `http://localhost:8000`
 ## 💡 How It Works
 
 - **Frontend**: Pure HTML, CSS, and JavaScript (no frameworks!)
-- **Backend**: Node.js + Express API
-- **Storage**: In-memory database (easily upgradeable to permanent DB)
+- **Backend**: Vercel serverless functions (`api/`)
+- **Storage**: Vercel Blob
 - **Music**: YouTube IFrame API for playback
 - **Sharing**: 6-character codes that work across all devices
 
@@ -116,7 +116,7 @@ Then open: `http://localhost:8000`
 ## 🚨 Important Notes
 
 - **Backend included!** CDs are now shared across all devices
-- In-memory storage (CDs may be lost on server restart - upgrade to permanent DB for production)
+- CDs are stored permanently in Vercel Blob (connect a Blob store to the Vercel project)
 - YouTube API key is included for easy deployment
 - Some videos may not be embeddable (auto-skips to next)
 - **See DEPLOYMENT.md for hosting instructions**

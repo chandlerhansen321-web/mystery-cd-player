@@ -24,11 +24,11 @@ You'll upload your Mystery CD Player to the internet so anyone can use it and sh
 
 On the repository page:
 - Click **uploading an existing file**
-- Drag ALL these files from your Downloads/mystery-cd-app folder:
+- Drag ALL these files from your Downloads/mystery-cd-player folder:
   ```
   index.html
   app.js
-  server.js
+  api/            (whole folder)
   package.json
   vercel.json
   README.md
