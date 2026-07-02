@@ -18,6 +18,13 @@ export default async function handler(req, res) {
     }
 
     const { code } = req.query;
+
+    // Same charset rule as the create endpoint — the code becomes the blob
+    // list prefix cds/<code>.json, so reject anything else before it gets there.
+    if (typeof code !== 'string' || !/^[a-zA-Z0-9]{1,12}$/.test(code)) {
+        return res.status(400).json({ success: false, message: 'Invalid code' });
+    }
+
     const cd = await getCD(code);
 
     if (cd) {
