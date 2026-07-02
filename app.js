@@ -442,6 +442,17 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Thumbnails are interpolated into an HTML attribute — only allow plain https
+// URLs (no quotes/angle brackets/spaces) so they can't break out of src="...".
+function safeThumbnailUrl(url) {
+    return (typeof url === 'string' && /^https:\/\/[^"'<>\s\\]+$/.test(url)) ? url : '';
+}
+
+function thumbnailImg(url) {
+    const safe = safeThumbnailUrl(url);
+    return safe ? `<img src="${safe}" alt="thumbnail">` : '';
+}
+
 // Search YouTube
 async function searchTracks() {
     const query = document.getElementById('trackSearch').value;
@@ -468,13 +479,15 @@ async function searchTracks() {
             return;
         }
 
-        searchCache = data.items.map((item, index) => ({
-            id: 'search_' + Date.now() + '_' + index,
-            videoId: item.id.videoId,
-            title: item.snippet.title,
-            channel: item.snippet.channelTitle,
-            thumbnail: item.snippet.thumbnails.default.url
-        }));
+        searchCache = data.items
+            .filter(item => item && item.id && item.id.videoId && item.snippet)
+            .map((item, index) => ({
+                id: 'search_' + Date.now() + '_' + index,
+                videoId: item.id.videoId,
+                title: item.snippet.title,
+                channel: item.snippet.channelTitle,
+                thumbnail: (item.snippet.thumbnails && item.snippet.thumbnails.default && item.snippet.thumbnails.default.url) || ''
+            }));
 
         displaySearchResults(searchCache);
     } catch (error) {
@@ -494,7 +507,7 @@ function displaySearchResults(tracks) {
     resultsDiv.innerHTML = tracks.map(track => `
         <div class="track-item">
             <div class="track-info-inline">
-                <img src="${track.thumbnail}" alt="thumbnail">
+                ${thumbnailImg(track.thumbnail)}
                 <div class="track-text">
                     <div style="font-weight: bold;">${escapeHtml(track.title)}</div>
                     <div style="font-size: 14px; opacity: 0.7;">${escapeHtml(track.channel)}</div>
@@ -551,7 +564,7 @@ function updateSelectedTracks() {
     tracksDiv.innerHTML = selectedTracks.map((track, index) => `
         <div class="track-item">
             <div class="track-info-inline">
-                <img src="${track.thumbnail}" alt="thumbnail">
+                ${thumbnailImg(track.thumbnail)}
                 <div class="track-text">
                     <div>${index + 1}. ${escapeHtml(track.title)}</div>
                 </div>
