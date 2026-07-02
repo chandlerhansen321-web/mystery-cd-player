@@ -42,6 +42,35 @@ export default async function handler(req, res) {
         return res.status(413).json({ success: false, message: 'Payload too large' });
     }
 
+    // Validate each track and rebuild it with only the known fields — this CD is
+    // served back verbatim to everyone who loads the code, so never store
+    // arbitrary caller-supplied objects.
+    const cleanTracks = [];
+    for (const track of tracks) {
+        if (typeof track !== 'object' || track === null) {
+            return res.status(400).json({ success: false, message: 'Invalid track' });
+        }
+        if (typeof track.videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(track.videoId)) {
+            return res.status(400).json({ success: false, message: 'Invalid track videoId' });
+        }
+        if (typeof track.title !== 'string' || track.title.length === 0 || track.title.length > 300) {
+            return res.status(400).json({ success: false, message: 'Invalid track title' });
+        }
+        if (typeof track.channel !== 'string' || track.channel.length > 300) {
+            return res.status(400).json({ success: false, message: 'Invalid track channel' });
+        }
+        if (track.thumbnail != null && (typeof track.thumbnail !== 'string' ||
+            track.thumbnail.length > 500 || !track.thumbnail.startsWith('https://'))) {
+            return res.status(400).json({ success: false, message: 'Invalid track thumbnail' });
+        }
+        cleanTracks.push({
+            videoId: track.videoId,
+            title: track.title,
+            channel: track.channel,
+            thumbnail: track.thumbnail || ''
+        });
+    }
+
     // Check if code already exists
     const existingCD = await getCD(code);
     if (existingCD) {
@@ -52,7 +81,7 @@ export default async function handler(req, res) {
     const cdData = {
         title: title,
         message: message || '',
-        tracks: tracks,
+        tracks: cleanTracks,
         createdAt: new Date().toISOString()
     };
 
