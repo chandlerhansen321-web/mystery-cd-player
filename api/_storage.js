@@ -40,23 +40,3 @@ export async function saveCD(code, cdData) {
         return false;
     }
 }
-
-export async function getAllCodes() {
-    try {
-        const { blobs } = await list({ prefix: 'cds/' });
-        return blobs.map(blob => blob.pathname.replace('cds/', '').replace('.json', ''));
-    } catch (error) {
-        console.error('Error getting all codes:', error);
-        return [];
-    }
-}
-
-export async function getCDCount() {
-    try {
-        const codes = await getAllCodes();
-        return codes.length;
-    } catch (error) {
-        console.error('Error getting CD count:', error);
-        return 0;
-    }
-}

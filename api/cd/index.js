@@ -1,4 +1,4 @@
-// Create a new CD - Vercel Serverless Function with KV
+// Create a new CD - Vercel Serverless Function backed by Vercel Blob
 import { getCD, saveCD } from '../_storage.js';
 
 export default async function handler(req, res) {

@@ -1,4 +1,4 @@
-// Get a CD by code - Vercel Serverless Function with KV
+// Get a CD by code - Vercel Serverless Function backed by Vercel Blob
 import { getCD } from '../_storage.js';
 
 export default async function handler(req, res) {
